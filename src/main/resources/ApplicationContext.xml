@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="teacher1" name="teacher2" class="lwy.study.spring.entity.Teacher">
+        <property name="sid" value="1002"/>
+        <property name="sname" value="李四"/>
+        <property name="sage" value="30"/>
+        <property name="sgender" value="男"/>
+    </bean>
+    <bean id="teacher3" class="lwy.study.spring.entity.Teacher">
+        <property name="sid" value="1003"/>
+        <property name="sname" value="王五"/>
+        <property name="sage" value="20"/>
+        <property name="sgender" value="女"/>
+    </bean>
+    <bean id="teacher4" class="lwy.study.spring.entity.Teacher">
+        <constructor-arg index="0" type="java.lang.Integer" value="1004"/>
+        <constructor-arg name="sname" value="秦始皇"/>
+        <constructor-arg name="sage" value="50"/>
+        <constructor-arg name="sgender" value="男"/>
+    </bean>
+    <bean id="userDao" class="lwy.study.spring.dao.impl.UserDaoImpl">
+    </bean>
+    <bean id="userService" class="lwy.study.spring.service.impl.UserServiceImpl">
+        <property name="userDao" ref="userDao">
+        </property>
+    </bean>
+</beans>

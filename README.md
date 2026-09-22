@@ -1,5 +1,6 @@
 # 练习9 Spring概念与入门 —— spring_basic
 
+> **这个项目在干什么？** 老师用它演示两件事：① Spring 容器如何接管对象的创建和装配——`Teacher` 等对象不再由 `new` 出来，而是写进 `ApplicationContext.xml`，由容器创建、通过 `getBean()` 领取；② 用四层结构（Controller→Service→DAO）做一个最简单的登录验证，把"Service 依赖 DAO"这种引用关系交给 Spring 装配（`ref` 注入），体会控制反转（IoC）。
 > 练习内容：完成课上练习（Spring 第一课）。核心是 **set 注入实现简单登录验证** + Spring 入门案例（bean 的定义与获取）。
 > Spring 版本：7.1.0-M1（课堂指定）· lombok 1.18.48 · JDK 17 · Maven war 工程
 
@@ -77,6 +78,13 @@ TestSpring(main) → UserService(getBean) → UserDao → 校验 张三/123 → 
 ```
 
 Service 只声明 `UserDao userDao` 属性 + `setUserDao`，对象由 Spring 容器注入——这就是控制反转（IoC）：对象的创建和装配交给容器。
+
+**"张三"是干嘛的？** 它出现了两次，身份不同：
+
+- `TestSpring` 里传的 `login("张三","123")`：**用户在登录框输入的账号密码**（参数）
+- `UserDaoImpl` 里写死的 `"张三"`：**模拟数据库里已注册的用户记录**。真实项目这一步应该拿账号密码去查库（`select * from user where ...`），但本课重点是依赖注入、不连数据库，所以老师用一行 if 硬编码模拟"user 表里唯一的一条数据"。对上了返回 true → 登陆成功
+
+张三/李四/王五都是中文示例的默认占位名（相当于美国的 John Doe），没有任何特殊含义，一眼就知道是编的测试数据。哪天接上真数据库，只需改 `UserDaoImpl` 内部换成查库，接口、Service、测试都不用动——这正是分层的好处。
 
 ### 5. lombok
 

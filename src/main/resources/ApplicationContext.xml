@@ -1,31 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans
-       http://www.springframework.org/schema/beans/spring-beans.xsd">
-
-    <bean id="teacher1" name="teacher2" class="lwy.study.spring.entity.Teacher">
-        <property name="sid" value="1002"/>
-        <property name="sname" value="李四"/>
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+    <bean id="teacher1" name="teacher3" class="lwy.study.spring.entity.Teacher">
+        <property name="sid" value="1"/>
+        <property name="sname" value="张三"/>
         <property name="sage" value="30"/>
         <property name="sgender" value="男"/>
     </bean>
-    <bean id="teacher3" class="lwy.study.spring.entity.Teacher">
-        <property name="sid" value="1003"/>
-        <property name="sname" value="王五"/>
-        <property name="sage" value="20"/>
+    <!-- 定义别名 -->
+    <alias name="teacher2" alias="t"/>
+    <bean id="teacher2"  class="lwy.study.spring.entity.Teacher">
+        <property name="sid" value="2"/>
+        <property name="sname" value="李四"/>
+        <property name="sage" value="28"/>
         <property name="sgender" value="女"/>
     </bean>
-    <bean id="teacher4" class="lwy.study.spring.entity.Teacher">
-        <constructor-arg index="0" type="java.lang.Integer" value="1004"/>
-        <constructor-arg name="sname" value="秦始皇"/>
-        <constructor-arg name="sage" value="50"/>
-        <constructor-arg name="sgender" value="男"/>
+<!--    构造方法注入，一定要符合参数的个数和类型，以及顺序  -->
+<!--    构造方法需要把所有的属性写全-->
+<bean id="teacher5" class="lwy.study.spring.entity.Teacher">
+    <constructor-arg name="sid" value="5"/>
+    <constructor-arg name="sname" value="王五"/>
+    <constructor-arg name="sage" value="30"/>
+    <constructor-arg name="sgender" value="男"/>
+    <constructor-arg name="schoolAddress" ref="address" />
+</bean>
+    <bean id="address" class="lwy.study.spring.entity.Address">
+        <property name="city" value="北京市朝阳区"/>
+        <property name="street" value="东湖街道"/>
     </bean>
-    <bean id="userDao" class="lwy.study.spring.dao.impl.UserDaoImpl">
+    <bean id="address2" class="lwy.study.spring.entity.Address">
+        <property name="city" value="北京市朝阳区"/>
+        <property name="street" value="西湖街道"/>
     </bean>
-    <bean id="userService" class="lwy.study.spring.service.impl.UserServiceImpl">
-        <property name="userDao" ref="userDao">
-        </property>
+<!--    使用实例工厂产生实例-->
+    <bean id="teacherOfFactory" class="lwy.study.spring.entity.TeacherFactory"/>
+
+    <bean id="teacher" factory-bean="teacherOfFactory" factory-method="getInstance">
+        <property name="sid" value="1001"/>
+        <property name="sname" value="张实例"/>
+        <property name="sage" value="30"/>
+        <property name="sgender" value="男"/>
+        <property name="schoolAddress" ref="address2"/>
+    </bean>
+<!--    使用静态工厂产生实例-->
+    <bean id="teacherOfFactory2" class="lwy.study.spring.entity.TeacherFactory2" factory-method="getInstance">
+        <property name="sid" value="1002"/>
+        <property name="sname" value="张静态"/>
+        <property name="sage" value="30"/>
+        <property name="sgender" value="男"/>
+        <property name="schoolAddress" ref="address"/>
     </bean>
 </beans>

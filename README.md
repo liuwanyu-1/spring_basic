@@ -1,97 +1,87 @@
-# 练习9 Spring概念与入门 —— spring_basic
+# spring_basic —— Spring 入门（练习9 + 练习10）
 
-> **这个项目在干什么？** 老师用它演示两件事：① Spring 容器如何接管对象的创建和装配——`Teacher` 等对象不再由 `new` 出来，而是写进 `ApplicationContext.xml`，由容器创建、通过 `getBean()` 领取；② 用四层结构（Controller→Service→DAO）做一个最简单的登录验证，把"Service 依赖 DAO"这种引用关系交给 Spring 装配（`ref` 注入），体会控制反转（IoC）。
-> 练习内容：完成课上练习（Spring 第一课）。核心是 **set 注入实现简单登录验证** + Spring 入门案例（bean 的定义与获取）。
-> Spring 版本：7.1.0-M1（课堂指定）· lombok 1.18.48 · JDK 17 · Maven war 工程
+> **练习9**：Spring 概念与入门——bean 的定义、set/构造注入、容器加载与获取。
+> **练习10**：bean 的实例化——工厂方式（实例工厂/静态工厂）+ 单例模式（呼应 singleton 作用域）。
+> Spring 版本：7.1.0-M1（课堂指定）· lombok 1.18.48 · JDK 17 · Maven war 工程 · 包名 `lwy.study.spring`
 
 ## 项目结构
 
 ```
-src/main/java/lwy/study/spring/
-├── entity/Teacher.java          实体类：lombok 六件套（无参/全参构造、getter/setter、toString）
-├── dao/UserDao.java             数据访问层接口：boolean login(name, password)
-├── dao/impl/UserDaoImpl.java    DAO 实现：校验账号（张三/123）
-├── service/UserService.java     业务层接口
-├── service/impl/UserServiceImpl.java  业务层实现：持有 UserDao，由 Spring 注入
-src/main/resources/ApplicationContext.xml   bean 配置（set 注入 + 构造注入 + ref 引用）
-src/test/java/.../TestSpring.java           main 方法：加载容器 → 登录验证 → 登陆成功
-src/test/java/.../TestAC.java               按 id / 按 name+类型 获取 bean、单例比较
-src/test/java/.../TestTeacher.java          lombok 全参构造测试
+src/main/java/lwy/study/spring/entity/
+├── Teacher.java        实体：sid/sname/sage(String)/sgender/schoolAddress，lombok 六件套
+├── Address.java        地址实体：city/street（被 Teacher 引用，演示 ref 注入）
+├── TeacherFactory.java 实例工厂：getInstance() 为普通方法，需先 new 工厂再调
+├── TeacherFactory2.java 静态工厂：getInstance() 为 static，类名直接调
+├── SingleTon.java      单例（synchronized 懒汉式）：呼应 bean 默认 singleton 作用域
+src/main/resources/ApplicationContext.xml
+src/test/java/lwy/study/spring/entity/
+├── TestAC.java         容器测试：按 id/name+类型获取、getType、containsBean/getAliases、工厂产品
+├── TestTeacher.java    lombok 全参构造
+└── TestTeacherFactory.java  两种工厂的纯 Java 调用对比
 ```
 
 ## 知识点
 
-### 1. 两种注入方式
-
-**set 方法注入**（要求属性必须有 set 方法，方法名 = set + 属性首字母大写）：
+### 1. set 注入 与 构造注入
 
 ```xml
-<bean id="teacher1" name="teacher2" class="lwy.study.spring.entity.Teacher">
-    <property name="sid" value="1002"/>
-    <property name="sname" value="李四"/>
+<!-- set 注入：属性必须有 set 方法（lombok @Setter 生成） -->
+<bean id="teacher1" name="teacher3" class="lwy.study.spring.entity.Teacher">
+    <property name="sid" value="1"/>
+    <property name="sname" value="张三"/>
+</bean>
+
+<!-- 构造注入：参数个数、类型、顺序必须与构造方法对应 -->
+<bean id="teacher5" class="lwy.study.spring.entity.Teacher">
+    <constructor-arg name="sid" value="5"/>
+    <constructor-arg name="sname" value="王五"/>
+    <constructor-arg name="schoolAddress" ref="address"/>
 </bean>
 ```
 
-**构造方法注入**（一定要符合构造方法参数的个数和类型、顺序）：
+- **value**：简单类型赋值；**ref**：引用另一个 bean（引用类型）——不要把 ref 写成 value
+- `name="teacher3"` 可给 bean 起多个别名（逗号隔开）；`<alias name="teacher2" alias="t"/>` 单独定义别名
 
-```xml
-<bean id="teacher4" class="lwy.study.spring.entity.Teacher">
-    <constructor-arg index="0" type="java.lang.Integer" value="1004"/>
-    <constructor-arg name="sname" value="秦始皇"/>
-    <constructor-arg name="sage" value="50"/>
-    <constructor-arg name="sgender" value="男"/>
-</bean>
-```
-
-### 2. value 与 ref 的区别（易错点）
-
-- `value`：给**简单类型**（String、int 等）赋值
-- `ref`：引用**另一个 bean**（引用类型），例如 Service 依赖 DAO：
-
-```xml
-<bean id="userDao" class="lwy.study.spring.dao.impl.UserDaoImpl"/>
-<bean id="userService" class="lwy.study.spring.service.impl.UserServiceImpl">
-    <property name="userDao" ref="userDao"/>
-</bean>
-```
-
-### 3. 加载容器与获取 bean
+### 2. 获取 bean 与作用域
 
 ```java
-ApplicationContext applicationContext =
-        new ClassPathXmlApplicationContext("ApplicationContext.xml");
-
-// 按 id 获取（需要强转）
-Teacher teacher1 = (Teacher) applicationContext.getBean("teacher1");
-
-// 按 name + 类型 获取（无需强转）
-Teacher teacher3 = applicationContext.getBean("teacher3", Teacher.class);
+ApplicationContext ctx = new ClassPathXmlApplicationContext("ApplicationContext.xml");
+Teacher t1 = (Teacher) ctx.getBean("teacher1");          // 按 id，需强转
+Teacher t2 = ctx.getBean("teacher2", Teacher.class);      // 按 name+类型，无需强转
+Class<?> c = ctx.getType("teacher5");                     // 取 bean 的 Class
+ctx.containsBean("teacher1");                             // 是否存在
+ctx.getAliases("t");                                      // 查别名
 ```
 
-- 默认作用域是 **singleton**（单例）：`getBean("teacher1") == getBean("teacher2")` 为 true
-- 按**类型**获取时，容器里该类型必须只有一个 bean，否则报错
+- 默认作用域 **singleton**（单例，容器里一份）；`scope="prototype"` 则每次获取都新建
+- 按**类型**获取时容器里该类型 bean 必须唯一，否则报错
 
-### 4. 登录验证链路
+### 3. bean 的实例化：工厂方式
 
+```xml
+<!-- 实例工厂：先配工厂实例，产品 bean 用 factory-bean + factory-method -->
+<bean id="teacherOfFactory" class="lwy.study.spring.entity.TeacherFactory"/>
+<bean id="teacher" factory-bean="teacherOfFactory" factory-method="getInstance">
+    <property name="sname" value="张实例"/>
+</bean>
+
+<!-- 静态工厂：无需工厂实例，只要 factory-method -->
+<bean id="teacherOfFactory2" class="lwy.study.spring.entity.TeacherFactory2" factory-method="getInstance">
+    <property name="sname" value="张静态"/>
+</bean>
 ```
-TestSpring(main) → UserService(getBean) → UserDao → 校验 张三/123 → true
-```
 
-Service 只声明 `UserDao userDao` 属性 + `setUserDao`，对象由 Spring 容器注入——这就是控制反转（IoC）：对象的创建和装配交给容器。
+- 实例工厂的 `getInstance()` 是普通方法 → 必须 `factory-bean` + `factory-method` 两个属性
+- 静态工厂的 `getInstance()` 是 static → 只需 `factory-method`（class 直接写工厂类）
+- 工厂产出对象后，依然可以用 `<property>` 继续注入属性
 
-**"张三"是干嘛的？** 它出现了两次，身份不同：
+### 4. 单例模式（SingleTon）
 
-- `TestSpring` 里传的 `login("张三","123")`：**用户在登录框输入的账号密码**（参数）
-- `UserDaoImpl` 里写死的 `"张三"`：**模拟数据库里已注册的用户记录**。真实项目这一步应该拿账号密码去查库（`select * from user where ...`），但本课重点是依赖注入、不连数据库，所以老师用一行 if 硬编码模拟"user 表里唯一的一条数据"。对上了返回 true → 登陆成功
-
-张三/李四/王五都是中文示例的默认占位名（相当于美国的 John Doe），没有任何特殊含义，一眼就知道是编的测试数据。哪天接上真数据库，只需改 `UserDaoImpl` 内部换成查库，接口、Service、测试都不用动——这正是分层的好处。
-
-### 5. lombok
-
-`@NoArgsConstructor @AllArgsConstructor @Getter @Setter @EqualsAndHashCode @ToString` 六件套生成构造器与读写方法（IDEA 需开启 annotation processing）。
+`synchronized` 懒汉式：私有构造 + 静态方法内判空创建。Spring 容器中的 bean 默认就是单例——多次 `getBean` 拿到同一对象。
 
 ## 运行方式
 
-1. IDEA 打开项目（Open 选 pom.xml），等 Maven 同步
-2. 跑 `TestAC` / `TestTeacher`（JUnit）
-3. 跑 `TestSpring` 的 main：控制台输出 `登陆成功`
+1. IDEA 打开项目（Open 选 pom.xml），Maven 同步
+2. `TestAC`：4 个测试（获取/类型/别名/工厂产品）
+3. `TestTeacherFactory`：实例工厂 vs 静态工厂
+4. `TestTeacher`：lombok 全参构造
